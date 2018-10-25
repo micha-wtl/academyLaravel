@@ -19,6 +19,12 @@ use App\Http\Resources\UserCollection;
 //    return $request->user();
 //});
 
-Route::get('/users', function () {
-    return new UserCollection(User::all());
+Route::group(['middleware' => 'auth:api'], function(){
+
+    Route::get('/users', function () {
+        return new UserCollection(User::all());
+    });
+
 });
+
+

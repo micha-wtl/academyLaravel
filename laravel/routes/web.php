@@ -17,8 +17,3 @@ use App\Http\Resources\UserCollection;
 Route::get('/', function () {
     return view('welcome');
 });
-
-Route::get('/users', function () {
-    return new UserCollection(User::all());
-});
-
