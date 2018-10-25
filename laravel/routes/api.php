@@ -1,5 +1,6 @@
 <?php
 
+use App\Comment;
 use App\Http\Resources\PostsCollection;
 use App\Http\Resources\UserCollection;
 use App\Post;
@@ -210,6 +211,41 @@ Route::group(['middleware' => 'auth:api'], function () {
         );
 
         return json_encode($a);
+    });
+
+
+    // add Comment
+    Route::post('/posts/{id}/comments', function (Request $request, $id) {
+
+        $rqArray = $request->toArray();
+        $comment = new \App\Comment();
+        $comment->post_id = $id;
+        $comment->message = $rqArray['message'];
+        $comment->save();
+
+        return new \App\Http\Resources\Comment($comment);
+    });
+
+    // get Comment
+    Route::get('/posts/{postId}/comments/{commentId}', function ($commentId) {
+
+        return new \App\Http\Resources\CommentWithPostId(Comment::find($commentId));
+    });
+
+    // @todo not working
+    // edit Comment
+    Route::put('/posts/{postId}/comments/{commentId}', function (Request $request, $postId, $commentId) {
+
+        $rqArray = $request->toArray();
+
+        $post = Post::find($postId)->first();
+        $comment = Comment::find($commentId)->first();
+
+        $post->comments->associate($comment);
+
+
+
+        return new \App\Http\Resources\Comment($comment);
     });
 
 
