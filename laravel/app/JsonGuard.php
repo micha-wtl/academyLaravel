@@ -22,5 +22,4 @@ class JsonGuard extends TokenGuard
         $this->storageKey = 'token';
     }
 
-
 }
