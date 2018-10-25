@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Http\Request;
+use App\User;
+use App\Http\Resources\UserCollection;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,6 +15,10 @@ use Illuminate\Http\Request;
 |
 */
 
-Route::middleware('auth:api')->get('/user', function (Request $request) {
-    return $request->user();
+//Route::middleware('auth:api')->get('/user', function (Request $request) {
+//    return $request->user();
+//});
+
+Route::get('/users', function () {
+    return new UserCollection(User::all());
 });
