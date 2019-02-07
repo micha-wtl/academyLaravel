@@ -1,11 +1,12 @@
 <?php
 
 use App\Comment;
-use App\Http\Resources\PostsCollection;
+use App\Http\Resources\PostCollection;
 use App\Http\Resources\UserCollection;
 use App\Post;
 use App\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,6 +19,9 @@ use Illuminate\Http\Request;
 |
 */
 
+/**
+ *  Users
+ */
 
 // new User
 Route::post('/users', function (Request $request) {
@@ -67,60 +71,44 @@ Route::delete('/users/{id}', function ($id) {
 });
 
 
-Route::post('/posts', function (Request $request) {
+// -------------------------------------------------------------------------
 
-    $post = new Post();
-    $post->message = $request->message;
-    $post->created_at = now();
-    $post->user_id = Auth::id();
-    $post->save();
+/**
+ * Posts
+ */
 
-    /*
-     * user raussuchen
-     */
+Route::get('/posts', function () {
 
-    $a = array(
-        "id" => Auth::id(),
-        "message" => $request->message,
-        "author" => array(
-            "id" => Auth::id(),
-            "name" => Auth::user()->name,
-        )
-    );
+    return new \App\Http\Resources\PostCollection(Post::all());
 
-    return json_encode($a);
 });
+
+/*
+  * get single post
+
+  */
+Route::get('/posts/{id}', function ($id) {
+
+    return new \App\Http\Resources\Post(Post::findOrFail($id));
+});
+
 
 Route::group(['middleware' => 'auth:api'], function () {
 
+    // add Post
+    Route::post('/posts', function (Request $request) {
 
-    Route::get('/posts', function () {
+        $rqArray = $request->toArray();
 
-        $a = new PostsCollection(Post::all('id', 'user_id', 'message'));
-        $ret = array();
+        $post = new Post();
+        $post->message = $rqArray['message'];
+//        $post->created_at = now();
+        $post->user_id = Auth::id();
+        $post->save();
 
-        foreach ($a as $b) {
-            $user_id = Post::findOrFail($b['id'], array('user_id'));
-            $author = User::find($user_id);
-
-            $js = array(
-                "id" => $b['id'],
-                "message" =>  $b['message'],
-                "author" => array(
-                    "id" => $b['user_id'],
-                    "name" => $author->first()->name
-                ),
-                "comments" => ""
-            );
-
-            $ret[] = $js;
-        }
-
-
-       return json_encode(array("posts" =>$ret));
-
-
+        return new \App\Http\Resources\Post($post);
     });
+
 
     /*
      * delete post
@@ -133,58 +121,20 @@ Route::group(['middleware' => 'auth:api'], function () {
         return response('ok', 200)->header('Content-Type', 'text/plain');
     });
 
+    // edit Post
+    Route::put('/posts/{id}', function (Request $request, $id) {
 
-    /*
-     * get single post
-     *
-            {
-              "id": 1,
-              "message": "Das ist ein Test!",
-              "author": {
-                "id": 1,
-                "name": "Uwe Kowalsky"
-              },
-              "comments": []
-            }
-     */
-    Route::get('/posts/{id}', function ($id) {
+        $rqArray = $request->toArray();
+        $post = Post::find($id);
+        $post->message = $rqArray['message'];
 
-        $message = Post::findOrFail($id, array('message'));
-        $user_id = Post::findOrFail($id, array('user_id'));
-        $author = User::find($user_id);
+        $post->save();
 
-
-        $a = array(
-            "id" => Auth::id(),
-            "message" => $message,
-            "author" => array(
-                "id" => $user_id,
-                "name" => $author->first()->name
-            ),
-            "comments" => ""
-
-        );
-
-        return json_encode($a);
-
+        return new \App\Http\Resources\Post($post);
     });
 
 
-    /*
-     * add new post
-     *
-     *
-            {
-              "id": 1,
-              "message": "Das ist ein Test!",
-              "author": {
-                "id": 1,
-                "name": "Uwe Kowalsky"
-              }
-            }
-     */
-
-
+// -------------------------------------------------------------------------
 
     // add Comment
     Route::post('/posts/{id}/comments', function (Request $request, $id) {
@@ -198,29 +148,42 @@ Route::group(['middleware' => 'auth:api'], function () {
         return new \App\Http\Resources\Comment($comment);
     });
 
-    // get Comment
-    Route::get('/posts/{postId}/comments/{commentId}', function ($commentId) {
 
-        return new \App\Http\Resources\CommentWithPostId(Comment::find($commentId));
-    });
-
-    // @todo not working
     // edit Comment
     Route::put('/posts/{postId}/comments/{commentId}', function (Request $request, $postId, $commentId) {
 
         $rqArray = $request->toArray();
 
-        $post = Post::find($postId)->first();
-        $comment = Comment::find($commentId)->first();
+        $comment = Comment::find($commentId);
+        $comment->message = $rqArray['message'];
 
-        $post->comments->associate($comment);
-
-
+        $comment->save();
 
         return new \App\Http\Resources\Comment($comment);
     });
 
+/*
+ * delete Comment
+ */
+    Route::delete('/posts/{postId}/comments/{commentId}', function ($postId, $commentId) {
+        $comment = App\Comment::find($commentId);
+
+        $comment->delete();
+
+        return response('ok', 200)->header('Content-Type', 'text/plain');
+    });
 
 });
 
 
+// get Comment
+Route::get('/posts/{postID}/comments/{commentId}', function ($postId, $commentId) {
+
+    return new \App\Http\Resources\Comment(Comment::find($commentId));
+});
+
+// get Comments
+Route::get('/posts/{postId}/comments', function ($postId) {
+
+    return new \App\Http\Resources\CommentWithPostId(Post::find($postId));
+});

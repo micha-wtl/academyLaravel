@@ -15,8 +15,8 @@ class CommentWithPostId extends Resource
     public function toArray($request)
     {
         return [
-            'postId' => $this->post_id,
-            'message' => $this->message,
+            'postId' => $this->id,
+            'comments' => Comment::collection($this->comments),
         ];
     }
 }

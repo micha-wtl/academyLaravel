@@ -22,4 +22,19 @@ class JsonGuard extends TokenGuard
         $this->storageKey = 'token';
     }
 
+    /**
+     * Get the token for the current request.
+     *
+     * @return string
+     */
+    public function getTokenForRequest()
+    {
+        $token = parent::getTokenForRequest();
+
+        if (empty($token)) {
+            $token = $this->request->header($this->inputKey);
+        }
+
+        return $token;
+    }
 }
