@@ -17,6 +17,7 @@ class Comment extends Resource
         return [
             'id' => $this->id,
             'message' => $this->message,
+            'author' => $this->user
         ];
     }
 }

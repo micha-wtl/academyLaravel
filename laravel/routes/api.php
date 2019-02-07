@@ -1,6 +1,7 @@
 <?php
 
 use App\Comment;
+use App\Http\Requests\PostRequest;
 use App\Http\Resources\PostCollection;
 use App\Http\Resources\UserCollection;
 use App\Post;
@@ -44,8 +45,13 @@ Route::get('/users', function () {
 
 // get User
 Route::get('/users/{id}', function ($id) {
+    $user = User::find($id);
 
-    return new \App\Http\Resources\User(User::find($id));
+    if (!$user) {
+        return response('Not found', 404)->header('Content-Type', 'text/plain');
+    }
+
+    return new \App\Http\Resources\User($user);
 });
 
 
@@ -96,13 +102,12 @@ Route::get('/posts/{id}', function ($id) {
 Route::group(['middleware' => 'auth:api'], function () {
 
     // add Post
-    Route::post('/posts', function (Request $request) {
+    Route::post('/posts', function (PostRequest $request) {
 
         $rqArray = $request->toArray();
 
         $post = new Post();
         $post->message = $rqArray['message'];
-//        $post->created_at = now();
         $post->user_id = Auth::id();
         $post->save();
 
@@ -122,7 +127,7 @@ Route::group(['middleware' => 'auth:api'], function () {
     });
 
     // edit Post
-    Route::put('/posts/{id}', function (Request $request, $id) {
+    Route::put('/posts/{id}', function (PostRequest $request, $id) {
 
         $rqArray = $request->toArray();
         $post = Post::find($id);
@@ -142,6 +147,7 @@ Route::group(['middleware' => 'auth:api'], function () {
         $rqArray = $request->toArray();
         $comment = new \App\Comment();
         $comment->post_id = $id;
+        $comment->user_id = Auth::id();
         $comment->message = $rqArray['message'];
         $comment->save();
 
@@ -162,11 +168,14 @@ Route::group(['middleware' => 'auth:api'], function () {
         return new \App\Http\Resources\Comment($comment);
     });
 
-/*
- * delete Comment
- */
+    /*
+     * delete Comment
+     */
     Route::delete('/posts/{postId}/comments/{commentId}', function ($postId, $commentId) {
         $comment = App\Comment::find($commentId);
+        if (!$comment) {
+            return response('Not found', 404)->header('Content-Type', 'text/plain');
+        }
 
         $comment->delete();
 
@@ -178,8 +187,13 @@ Route::group(['middleware' => 'auth:api'], function () {
 
 // get Comment
 Route::get('/posts/{postID}/comments/{commentId}', function ($postId, $commentId) {
+    $comment = App\Comment::find($commentId);
 
-    return new \App\Http\Resources\Comment(Comment::find($commentId));
+    if (!$comment) {
+        return response('Not found', 404)->header('Content-Type', 'text/plain');
+    }
+
+    return new \App\Http\Resources\Comment($comment);
 });
 
 // get Comments

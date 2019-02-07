@@ -14,6 +14,7 @@ class CommentsTableSeeder extends Seeder
         for ($i = 0; $i < 100; $i++) {
             DB::table('comments')->insert([
                 'post_id' => rand(1,100),
+                'user_id' => rand(1,5),
                 'message' => str_random(150),
                 'created_at' => now(),
                 'updated_at' => now()
